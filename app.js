@@ -10,7 +10,7 @@ require('dotenv').config();
 const app = express();
 
 app.use(cors({
-    origin: 'https://669a8e2bc5276c689e6123d4--bright-duckanoo-99594e.netlify.app',// Replace with your frontend domain if different
+    origin: 'http://localhost:3000', // Replace with your frontend domain if different
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));

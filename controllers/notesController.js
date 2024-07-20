@@ -23,8 +23,20 @@ exports.createNote = async (req, res) => {
 
 // Get all notes for a user
 exports.getNotes = async (req, res) => {
+    const { query } = req.query;
+
     try {
-        const notes = await Note.find({ user: req.user._id, deletedAt: null });
+        const notes = await Note.find({
+            user: req.user._id,
+            deletedAt: null,
+            ...(query ? {
+                $or: [
+                    { title: { $regex: query, $options: 'i' } },
+                    { content: { $regex: query, $options: 'i' } },
+                    { tags: { $regex: query, $options: 'i' } }
+                ]
+            } : {})
+        });
         res.json(notes);
     } catch (err) {
         res.status(500).send(err.message);
@@ -70,6 +82,64 @@ exports.archiveNote = async (req, res) => {
     }
 };
 
+// Unarchive a note
+exports.unarchiveNote = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const note = await Note.findById(id);
+        note.archived = false;
+        await note.save();
+        res.status(200).send('Note unarchived');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
+// Get all deleted notes for a user
+exports.getDeletedNotes = async (req, res) => {
+    try {
+        const notes = await Note.find({ user: req.user._id, deletedAt: { $ne: null } });
+        res.json(notes);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
+// Get all archived notes for a user
+exports.getArchivedNotes = async (req, res) => {
+    try {
+        const notes = await Note.find({ user: req.user._id, archived: true });
+        res.json(notes);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
+// Delete a note permanently
+exports.deleteNotePermanently = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await Note.findByIdAndDelete(id);
+        res.status(200).send('Note permanently deleted');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
+// Restore a note
+exports.restoreNote = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        await Note.findByIdAndUpdate(id, { deletedAt: null });
+        res.status(200).send('Note restored');
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
 // Search notes
 exports.searchNotes = async (req, res) => {
     const { query } = req.query;
@@ -84,6 +154,18 @@ exports.searchNotes = async (req, res) => {
                 { tags: { $regex: query, $options: 'i' } }
             ]
         });
+        res.json(notes);
+    } catch (err) {
+        res.status(500).send(err.message);
+    }
+};
+
+// Get notes by label
+exports.getNotesByLabel = async (req, res) => {
+    const { label } = req.params;
+
+    try {
+        const notes = await Note.find({ user: req.user._id, tags: label, deletedAt: null });
         res.json(notes);
     } catch (err) {
         res.status(500).send(err.message);

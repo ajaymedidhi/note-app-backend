@@ -5,14 +5,28 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const notesRoutes = require('./routes/notes');
 const cors = require('cors');
-const cron = require('node-cron'); // Add this line
-const Note = require('./models/note'); // Add this line
+const cron = require('node-cron');
+const Note = require('./models/note');
 require('dotenv').config();
 
 const app = express();
 
+// Define allowed origins
+const allowedOrigins = [
+    'https://669df3ef017118486cb7ccb2--bright-eclair-200148.netlify.app',
+    'https://669df9353a248cb8b80aa7d7--bright-eclair-200148.netlify.app'
+];
+
 app.use(cors({
-    origin: 'https://669df3ef017118486cb7ccb2--bright-eclair-200148.netlify.app', // Replace with your frontend domain if different
+    origin: function(origin, callback){
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if(!origin) return callback(null, true);
+        if(allowedOrigins.indexOf(origin) === -1){
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true // Allow credentials (cookies, authorization headers, etc.)
 }));
@@ -39,5 +53,5 @@ cron.schedule('0 0 * * *', async () => { // Runs every day at midnight
 });
 
 app.listen(3001, () => {
-    console.log('Server running on port 3001'); // Corrected port number to 3001
+    console.log('Server running on port 3001');
 });
